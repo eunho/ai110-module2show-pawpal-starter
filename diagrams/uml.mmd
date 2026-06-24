@@ -22,7 +22,7 @@ classDiagram
 
     class Task {
         +str task_id
-        +str pet_name
+        +Pet pet
         +str title
         +int duration
         +str priority
@@ -72,6 +72,7 @@ classDiagram
     }
 
     Owner "1" --> "*" Pet : owns
+    Task "*" --> "1" Pet : references
     Task <|-- FeedingTask
     Task <|-- WalkTask
     Task <|-- MedicationTask

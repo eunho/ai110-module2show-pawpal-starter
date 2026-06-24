@@ -44,14 +44,27 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
+Here is the terminal output showing a generated daily care plan for Mochi and Biscuit, including conflict resolution and budget warnings:
 
 ```
-# e.g.:
-# Daily plan for Biscuit (Golden Retriever):
-#   08:00 — Morning walk (30 min) [priority: high]
-#   09:00 — Feeding (10 min) [priority: high]
-#   ...
+🐾 Running PawPal+ Schedule Generator...
+
+===============================================================================================
+📅 TODAY'S PET CARE TIMELINE FOR JORDAN'S HOUSEHOLD
+===============================================================================================
+TIME SLOT     | PET        | TYPE | TASK TITLE                | PRIORITY | TASK DETAILS
+-----------------------------------------------------------------------------------------------
+08:00 - 08:30 | Mochi      | 🦮    | Morning Walk              | HIGH     | 1.5 mi, route: Greenlake Loop
+08:30 - 08:40 | Biscuit    | 🦴    | Breakfast Feeding         | HIGH     | 0.5 cups of Canned Salmon
+09:00 - 09:05 | Mochi      | 💊    | Joint Supplement          | MEDIUM   | Dosage: 1 chewable of Cosequin
+14:00 - 14:15 | Biscuit    | 🎾    | Laser Toy Play            | LOW      | Activity: Laser chasing
+===============================================================================================
+
+❌ DEFERRED/SKIPPED TASKS:
+ • 🎾 Agility Park Training for Mochi (80m) — Reason: Exceeds daily time budget (requires 80m, only 60m remaining of 120m budget).
+===============================================================================================
+📊 Daily Time Budget: [██████████░░░░░░░░░░] 60/120 mins (50.0%)
+===============================================================================================
 ```
 
 ## 🧪 Testing PawPal+

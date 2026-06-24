@@ -9,13 +9,19 @@
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+- **UML Design Overview**: The design models real-world pet care concepts through clean, decoupled Python classes. It separates data representation (`Owner`, `Pet`, `Task`) from scheduling execution logic (`Scheduler`, `ScheduleResult`).
+- **Classes and Responsibilities**:
+  - `Owner`: Holds owner-specific configurations (daily time budget, available windows) and maintains a registry of owned `Pet` profiles.
+  - `Pet`: Holds specific pet attributes (species, weight, energy level) and customized care preferences.
+  - `Task` (Base Class): Models a generic care action with core scheduling constraints (duration, priority level, preferred start time, target pet, recurrence).
+  - Specialized Task Subclasses (`FeedingTask`, `WalkTask`, `MedicationTask`, `EnrichmentTask`, `AppointmentTask`): Extend the base `Task` class to store specialized parameters (e.g., dosage, amount, routes, location) required for concrete activities.
+  - `Scheduler`: Implements a stateless engine that sorts tasks by priority/duration, maps them onto availability windows, shifts overlapping tasks to resolve conflicts, and enforces the owner's daily time budget.
+  - `ScheduleResult`: Synthesizes the output of a scheduler run, containing chronological scheduled tasks, skipped tasks with detailed reason explanations, and a step-by-step reasoning log.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+- **Did your design change during implementation?** Yes.
+- **Change and Rationale**: We modified the association between `Task` and `Pet`. In the initial draft skeleton, tasks held a string key `pet_name: str`. During implementation, we replaced this with a direct object reference `pet: Pet`. This change was made to adhere to strict Object-Oriented Programming (OOP) principles, preventing scheduling bugs or data mix-ups if multiple pets share the same name. Additionally, a direct object reference allows the scheduling engine or task logs to query pet-specific metadata (like weight, age, or species) dynamically if needed for future rule enhancements.
 
 ---
 
