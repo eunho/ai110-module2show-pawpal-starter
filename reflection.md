@@ -2,6 +2,11 @@
 
 ## 1. System Design
 
+**Core User Actions:**
+1. **Manage Pet Profiles**: A user can add a pet with characteristics (name, species, age, weight, energy level) to keep track of individualized care needs.
+2. **Define and Customize Pet Care Tasks**: A user can add or edit care tasks (e.g., feeding, walk, medication, enrichment, appointment) with specialized parameters (e.g., dosage, amount, location), duration, and priority.
+3. **Generate and View an Optimized Daily Schedule**: A user can trigger the scheduler to produce a daily plan that respects availability windows and time budgets, with explanations of why tasks were scheduled, deferred, or skipped.
+
 **a. Initial design**
 
 - Briefly describe your initial UML design.
