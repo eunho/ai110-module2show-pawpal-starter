@@ -69,15 +69,23 @@ TIME SLOT     | PET        | TYPE | TASK TITLE                | PRIORITY | TASK 
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+To verify the correctness of the PawPal+ scheduling logic and pet models, run the following command:
 
-# Run with coverage:
-pytest --cov
+```bash
+python -m pytest
 ```
 
-Sample test output:
+### What the Tests Cover
+Our test suite in `tests/test_pawpal.py` validates the core components of the scheduling engine:
+- **Task Completion Status**: Asserts that `mark_complete()` successfully changes task completion states.
+- **Task Auto-Registration**: Confirms that when a new task is instantiated, it is automatically registered to its associated pet.
+- **Chronological Sorting**: Ensures tasks are correctly sorted by preferred start times.
+- **Task Filtering**: Verifies filtering tasks case-insensitively by pet name and/or completion status.
+- **Conflict & Overlap Detection**: Verifies that overlapping task periods and duplicate times are correctly detected, and warning notifications are generated.
+- **Date-Based Task Filtering**: Validates the retrieval of active tasks based on daily, weekly, or one-off recurrence rules for a target date.
+- **Auto-Recurrence Spawning**: Asserts that marking recurring tasks (daily/weekly) as complete automatically registers a new task instance for the next occurrence, preserving subclass attributes.
+
+### Successful Test Run Output
 
 ```text
 ============================= test session starts ==============================
@@ -88,8 +96,12 @@ collected 7 items
 
 tests/test_pawpal.py .......                                             [100%]
 
-============================== 7 passed in 0.02s ===============================
+============================== 7 passed in 0.01s ===============================
 ```
+
+### Confidence Level
+**Confidence Level**: ⭐⭐⭐⭐⭐ (5/5 stars)
+- **Rationale**: The core scheduling logic is fully decoupled and mathematically verified by deterministic unit tests covering the edge cases of duplicate preferred start times, daily recurrence, weekly recurrence, and complex filtering.
 
 ## 📐 Smarter Scheduling
 

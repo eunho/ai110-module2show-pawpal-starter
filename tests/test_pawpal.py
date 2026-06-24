@@ -126,6 +126,17 @@ def test_scheduler_conflict_detection():
     assert Scheduler.detect_conflict(t1, t2) is True
     assert Scheduler.detect_conflict(t1, t3) is False
 
+    # Verify duplicate times (exact same start time) are flagged
+    t_dup1 = WalkTask("Walk A", 30, "high", datetime.time(10, 0), pet)
+    t_dup2 = WalkTask("Walk B", 30, "medium", datetime.time(10, 0), pet)
+    assert Scheduler.detect_conflict(t_dup1, t_dup2) is True
+
+    # Verify Scheduler.check_conflicts returns warnings for overlapping/duplicate tasks
+    warnings = Scheduler.check_conflicts([t_dup1, t_dup2])
+    assert len(warnings) == 1
+    assert "Conflict detected between 'Walk A'" in warnings[0]
+    assert "and 'Walk B'" in warnings[0]
+
 
 def test_scheduler_get_tasks_for_date():
     """Verify that get_tasks_for_date handles daily, weekly, and one-off task recurrences correctly."""
