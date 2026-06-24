@@ -99,8 +99,51 @@ def main():
     owner.add_pet(mochi)
     owner.add_pet(biscuit)
 
-    # 3. Create multiple Tasks with different start times, categories, and priorities
-    # High Priority Walk
+    # 3. Create multiple Tasks completely out of order
+    # Low Priority - 16:00
+    t5 = EnrichmentTask(
+        title="Agility Park Training",
+        duration=80,
+        priority="low",
+        preferred_start_time=datetime.time(16, 0),
+        pet=mochi,
+        activity_type="Obstacle run"
+    )
+
+    # Low Priority - 14:00
+    t4 = EnrichmentTask(
+        title="Laser Toy Play",
+        duration=15,
+        priority="low",
+        preferred_start_time=datetime.time(14, 0),
+        pet=biscuit,
+        activity_type="Laser chasing"
+    )
+
+    # Medium Priority - 09:00 (Marked completed to demonstrate status filter)
+    t3 = MedicationTask(
+        title="Joint Supplement",
+        duration=5,
+        priority="medium",
+        preferred_start_time=datetime.time(9, 0),
+        pet=mochi,
+        med_name="Cosequin",
+        dosage="1 chewable"
+    )
+    t3.mark_complete()
+
+    # Conflicting Low Priority task - also at 09:00
+    t3_conflict = FeedingTask(
+        title="Morning Snack",
+        duration=15,
+        priority="low",
+        preferred_start_time=datetime.time(9, 0),
+        pet=biscuit,
+        food_type="Tuna Treat",
+        amount_cups=0.25
+    )
+
+    # High Priority - 08:00
     t1 = WalkTask(
         title="Morning Walk",
         duration=30,
@@ -111,7 +154,7 @@ def main():
         route="Greenlake Loop"
     )
     
-    # High Priority Breakfast (Biscuit)
+    # High Priority - 08:30
     t2 = FeedingTask(
         title="Breakfast Feeding",
         duration=10,
@@ -121,43 +164,56 @@ def main():
         food_type="Canned Salmon",
         amount_cups=0.5
     )
-    
-    # Medium Priority Medication
-    t3 = MedicationTask(
-        title="Joint Supplement",
-        duration=5,
-        priority="medium",
-        preferred_start_time=datetime.time(9, 0),
-        pet=mochi,
-        med_name="Cosequin",
-        dosage="1 chewable"
-    )
-
-    # Low Priority Grooming / Play session
-    t4 = EnrichmentTask(
-        title="Laser Toy Play",
-        duration=15,
-        priority="low",
-        preferred_start_time=datetime.time(14, 0),
-        pet=biscuit,
-        activity_type="Laser chasing"
-    )
-
-    # Let's add a large Enrichment task that exceeds the remaining budget to verify the bar and skipped list
-    t5 = EnrichmentTask(
-        title="Agility Park Training",
-        duration=80,
-        priority="low",
-        preferred_start_time=datetime.time(16, 0),
-        pet=mochi,
-        activity_type="Obstacle run"
-    )
 
     # 4. Generate and print schedule
     scheduler = Scheduler()
     result = scheduler.generate_daily_schedule(owner)
     
     print_styled_schedule(owner, result)
+
+    print("\n" + "=" * 95)
+    print("🧪 DEMONSTRATING NEW SMART ALGORITHMS:")
+    print("=" * 95)
+
+    # A. Sorting tasks by time using Scheduler.sort_by_time()
+    all_raw_tasks = owner.get_all_tasks()
+    sorted_by_time = Scheduler.sort_by_time(all_raw_tasks)
+    print("\n⏰ 1. Tasks sorted chronologically via Scheduler.sort_by_time():")
+    for t in sorted_by_time:
+        print(f"  • [{t.preferred_start_time.strftime('%H:%M')}] {t.title} for {t.pet.name}")
+
+    # B. Filtering tasks by pet using Scheduler.filter_tasks()
+    mochi_tasks = Scheduler.filter_tasks(all_raw_tasks, pet_name="Mochi")
+    print(f"\n🐕 2. Mochi's tasks only via Scheduler.filter_tasks(pet_name='Mochi'):")
+    for t in mochi_tasks:
+        print(f"  • {t.title}")
+
+    # C. Basic Conflict Detection check & Lightweight warnings
+    print("\n⚠️ 3. Conflict Detection & Lightweight Warnings:")
+    overlap_exists = Scheduler.detect_conflict(t1, t2)
+    print(f"  • Overlap check between '{t1.title}' and '{t2.title}': {overlap_exists}")
+    
+    # Lightweight warnings run (only on tasks active for today!)
+    today = datetime.date.today()
+    today_tasks = Scheduler.get_tasks_for_date(all_raw_tasks, today)
+    warnings = Scheduler.check_conflicts(today_tasks)
+    print(f"  • Lightweight warning check for Today (found {len(warnings)} conflicts):")
+    for warn in warnings:
+        print(f"    {warn}")
+    
+    # D. Handling Recurring Tasks by date
+    tomorrow = today + datetime.timedelta(days=1)
+    
+    # Let's change t4 (Laser Toy Play) to recurrence="weekly" and set t5 to recurrence="none"
+    t4.recurrence = "weekly"
+    t5.recurrence = "none"
+    
+    print("\n🔄 4. Recurring Task Filtering for Tomorrow:")
+    tomorrow_tasks = Scheduler.get_tasks_for_date(all_raw_tasks, tomorrow)
+    print(f"  • Tomorrow's active tasks (recurrent daily/weekly matching weekday):")
+    for t in tomorrow_tasks:
+        print(f"    - {t.title} ({t.recurrence})")
+    print("=" * 95)
 
 if __name__ == "__main__":
     main()

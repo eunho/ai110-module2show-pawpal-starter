@@ -29,13 +29,13 @@
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+- **What constraints does your scheduler consider?** The scheduler enforces a strict daily time budget (in minutes), respects the owner's availability time blocks, ensures tasks do not overlap, and prioritizes critical needs based on priority level (High > Medium > Low).
+- **How did you decide which constraints mattered most?** Task priority level is treated as the primary constraint (High-priority tasks are scheduled first) because critical pet needs (such as medication or feeding times) cannot be skipped, whereas low-priority tasks (such as training or extra grooming) can be deferred if time is limited.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+- **Describe one tradeoff your scheduler makes.** The scheduler implements a **greedy, sequential conflict resolution** strategy. It schedules tasks one-by-one in sorted priority order. When a task overlaps with a previously scheduled task, it shifts that task forward in time until a free slot is found.
+- **Why is that tradeoff reasonable for this scenario?** A greedy approach is computationally efficient ($O(N \log N)$ sorting + $O(N)$ scheduling steps) and ensures instantaneous execution in the browser or terminal. While a globally optimized backtracking solver could potentially squeeze in more low-priority tasks by rearranging high-priority tasks, a greedy solver guarantees that critical high-priority items are booked at or as close to their preferred times as possible, which is the safest design for animal health.
 
 ---
 

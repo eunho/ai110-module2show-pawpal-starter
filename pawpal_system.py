@@ -144,6 +144,7 @@ class Task:
     recurrence: str = "daily"
     is_completed: bool = False
     task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    created_date: datetime.date = field(default_factory=datetime.date.today)
 
     def __post_init__(self) -> None:
         """
@@ -161,8 +162,28 @@ class Task:
     def mark_complete(self) -> None:
         """
         Marks the task as completed.
+        If the task is daily or weekly, automatically schedules the next occurrence relative to today.
         """
-        self.is_completed = True
+        if not self.is_completed:
+            self.is_completed = True
+            if self.recurrence in ("daily", "weekly"):
+                from dataclasses import replace
+                today_date = datetime.date.today()
+                if self.recurrence == "daily":
+                    next_date = today_date + datetime.timedelta(days=1)
+                else:  # weekly
+                    next_date = today_date + datetime.timedelta(weeks=1)
+                
+                # Create new instance for the next occurrence
+                replace(
+                    self,
+                    is_completed=False,
+                    created_date=next_date,
+                    task_id=str(uuid.uuid4())
+                )
+                
+                # Stop this completed task instance from continuing to recur
+                self.recurrence = "none"
 
     def __repr__(self) -> str:
         """Returns a string representation of the Task."""
@@ -264,6 +285,149 @@ class Scheduler:
         m = m % 1440
         return datetime.time(hour=m // 60, minute=m % 60)
 
+    @staticmethod
+    def sort_by_time(tasks: List[Task]) -> List[Task]:
+        """
+        Sorts a list of Task objects by their preferred start time.
+        Uses a lambda function as a key to sort strings in "HH:MM" format.
+
+        Args:
+            tasks (List[Task]): The list of Task objects to be sorted.
+
+        Returns:
+            List[Task]: A new list containing the sorted Task objects.
+        """
+        return sorted(tasks, key=lambda t: t.preferred_start_time.strftime("%H:%M"))
+
+    @staticmethod
+    def filter_tasks(
+        tasks: List[Task],
+        pet_name: Optional[str] = None,
+        is_completed: Optional[bool] = None
+    ) -> List[Task]:
+        """
+        Filters tasks by completion status or pet name.
+
+        Args:
+            tasks (List[Task]): The list of tasks to filter.
+            pet_name (Optional[str], optional): The pet's name to filter by. Defaults to None.
+            is_completed (Optional[bool], optional): The completion status to filter by. Defaults to None.
+
+        Returns:
+            List[Task]: A filtered list containing only matching tasks.
+        """
+        filtered = tasks
+        if pet_name is not None:
+            filtered = [t for t in filtered if t.pet.name.lower() == pet_name.lower()]
+        if is_completed is not None:
+            filtered = [t for t in filtered if t.is_completed == is_completed]
+        return filtered
+
+    @staticmethod
+    def detect_time_overlap(start1: datetime.time, duration1: int, start2: datetime.time, duration2: int) -> bool:
+        """
+        Checks if two time periods overlap.
+
+        Args:
+            start1 (datetime.time): The preferred start time of the first period.
+            duration1 (int): The duration of the first period in minutes.
+            start2 (datetime.time): The preferred start time of the second period.
+            duration2 (int): The duration of the second period in minutes.
+
+        Returns:
+            bool: True if the periods overlap, False otherwise.
+        """
+        s1 = Scheduler.time_to_minutes(start1)
+        e1 = s1 + duration1
+        s2 = Scheduler.time_to_minutes(start2)
+        e2 = s2 + duration2
+        return max(s1, s2) < min(e1, e2)
+
+    @staticmethod
+    def detect_conflict(task1: Task, task2: Task) -> bool:
+        """
+        Checks if two tasks have overlapping times based on their preferred start times and durations.
+
+        Args:
+            task1 (Task): The first Task object.
+            task2 (Task): The second Task object.
+
+        Returns:
+            bool: True if the tasks overlap in time, False otherwise.
+        """
+        return Scheduler.detect_time_overlap(
+            task1.preferred_start_time, task1.duration,
+            task2.preferred_start_time, task2.duration
+        )
+
+    @staticmethod
+    def get_tasks_for_date(tasks: List[Task], date: datetime.date) -> List[Task]:
+        """
+        Filters and returns the tasks that are active on a specific date.
+        - 'daily': Active every day.
+        - 'weekly': Active on the same day of the week as they were created.
+        - 'none': Active only on the exact created_date.
+
+        Args:
+            tasks (List[Task]): The full list of tasks.
+            date (datetime.date): The target date to filter tasks for.
+
+        Returns:
+            List[Task]: A list containing only tasks active on the target date.
+        """
+        active_tasks = []
+        for task in tasks:
+            created = getattr(task, "created_date", date)
+            # If the task starts in the future, it is not active on this date
+            if created > date:
+                continue
+            if task.recurrence == "daily":
+                active_tasks.append(task)
+            elif task.recurrence == "weekly":
+                if created.weekday() == date.weekday():
+                    active_tasks.append(task)
+            elif task.recurrence == "none":
+                if created == date:
+                    active_tasks.append(task)
+        return active_tasks
+
+    @staticmethod
+    def reset_completions(tasks: List[Task]) -> None:
+        """
+        Resets the completion status of all tasks to False.
+        Useful when starting a new day's schedule.
+
+        Args:
+            tasks (List[Task]): The list of tasks to reset.
+        """
+        for task in tasks:
+            task.is_completed = False
+
+    @staticmethod
+    def check_conflicts(tasks: List[Task]) -> List[str]:
+        """
+        Performs a lightweight conflict check on a list of tasks based on their preferred start times and durations.
+        Returns a list of warning messages for any overlapping tasks.
+
+        Args:
+            tasks (List[Task]): The list of tasks to check.
+
+        Returns:
+            List[str]: A list of warning message strings for each detected conflict.
+        """
+        warnings = []
+        sorted_tasks = Scheduler.sort_by_time(tasks)
+        for i in range(len(sorted_tasks)):
+            for j in range(i + 1, len(sorted_tasks)):
+                t1 = sorted_tasks[i]
+                t2 = sorted_tasks[j]
+                if Scheduler.detect_conflict(t1, t2):
+                    warnings.append(
+                        f"⚠️ WARNING: Conflict detected between '{t1.title}' for {t1.pet.name} "
+                        f"and '{t2.title}' for {t2.pet.name} around {t1.preferred_start_time.strftime('%H:%M')}."
+                    )
+        return warnings
+
     def generate_daily_schedule(self, owner: Owner, tasks: Optional[List[Task]] = None) -> ScheduleResult:
         """
         Generates an optimized non-overlapping daily schedule based on priority,
@@ -271,9 +435,9 @@ class Scheduler:
         """
         result = ScheduleResult()
         
-        # If tasks is not explicitly provided, retrieve all tasks from the owner's pets
+        # If tasks is not explicitly provided, retrieve tasks active for today
         if tasks is None:
-            tasks = owner.get_all_tasks()
+            tasks = self.get_tasks_for_date(owner.get_all_tasks(), datetime.date.today())
         
         if not tasks:
             result.explanation.append("No tasks provided or found for scheduling.")
@@ -335,9 +499,10 @@ class Scheduler:
 
                 # 2. Verify candidate does not overlap with already scheduled tasks
                 overlap = False
-                for s_start, s_end, _ in scheduled_intervals:
-                    # Overlap occurs if the intersection is non-empty
-                    if max(start_candidate, s_start) < min(end_candidate, s_end):
+                for s_start, s_end, s_task in scheduled_intervals:
+                    s_start_time = self.minutes_to_time(s_start)
+                    candidate_time = self.minutes_to_time(start_candidate)
+                    if self.detect_time_overlap(candidate_time, task.duration, s_start_time, s_task.duration):
                         overlap = True
                         break
 

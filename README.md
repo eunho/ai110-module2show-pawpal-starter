@@ -79,20 +79,28 @@ pytest --cov
 
 Sample test output:
 
-```
-# Paste your pytest output here
+```text
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/eunho/Documents/codepath/ai110-module2show-pawpal-starter
+plugins: anyio-4.13.0
+collected 7 items
+
+tests/test_pawpal.py .......                                             [100%]
+
+============================== 7 passed in 0.02s ===============================
 ```
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
+This system includes algorithmic features to manage the scheduling, validation, and execution of pet care tasks:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| **Task sorting** | `Scheduler.sort_by_time(tasks)` | Sorts task lists chronologically by preferred start time using a lambda function as a key to sort "HH:MM" time strings. |
+| **Filtering** | `Scheduler.filter_tasks(tasks, pet_name, is_completed)` | Filters a list of tasks case-insensitively by pet name and/or completion status. |
+| **Conflict handling** | `Scheduler.detect_time_overlap(s1, d1, s2, d2)`<br>`Scheduler.detect_conflict(t1, t2)`<br>`Scheduler.check_conflicts(tasks)` | Checks for overlapping time slots, resolves conflicts by shifting tasks forward, and offers a lightweight validation check returning non-crashing warnings. |
+| **Recurring tasks** | `Scheduler.get_tasks_for_date(tasks, date)`<br>`Task.mark_complete()` | Filters active tasks based on daily, weekly (weekday-matching), or one-off recurrence rules. Automatically schedules next occurrences on task completion. |
 
 ## 📸 Demo Walkthrough
 
